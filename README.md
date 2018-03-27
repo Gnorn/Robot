@@ -4,3 +4,6 @@ This needs (and includes for now, in order to make things simple) the following 
 -signalmaster (MIT license) found here: https://github.com/andyet/SimpleWebRTC
 -SimpleWebRTC (MIT license) found here: https://github.com/andyet/signalmaster
 -x-knob (public domain) found here: https://github.com/denilsonsa/html5-knob
+
+
+For now this is all very messy. Sorry. I hope it will get better later :)
