@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="latest-v2.js"></script>
+        <style>
+            #remoteVideos video {
+                height: 720px;
+            }
+            #localVideo {
+                height: 50px;
+            }
+            .Janpai {
+                position:absolute;
+                top:520px;
+            }
+            .Chatbox {
+                position: absolute;
+                top:50px;
+                left:20px;
+                height: 480px;
+                width: 860px;
+            }
+            .remotes {
+                position: absolute;
+                top:30px;
+                height: 480px;
+                width: 860px;
+            }
+            .videoContainer {
+                position: relative;
+                height: 100%;
+                width: 100%;
+            }
+            .videoContainer video {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+            }
+            .janpaiSelected {
+                background-color: green;
+            }
+            .janpaiUnselected {
+                opacity:0.5;
+            }
+            img{
+                height:50%;
+                width:50%;
+            }
+            .janpaiUnselected:hover {
+                opacity:1.0;
+            }
+
+        </style>
+        <script>
+
+          var SelectedVideoDevice = "default";
+          var webrtc;
+          var OnCall = false;
+
+          var janpaiz;
+
+          function InitJanpai(){
+            janpaiz = {
+              '1p':false,
+              '2p':false,
+              '3p':false,
+              '4p':false,
+              '5p':false,
+              '6p':false,
+              '7p':false,
+              '8p':false,
+              '9p':false,
+              '1s':false,
+              '2s':false,
+              '3s':false,
+              '4s':false,
+              '5s':false,
+              '6s':false,
+              '7s':false,
+              '8s':false,
+              '9s':false,
+              '1m':false,
+              '2m':false,
+              '3m':false,
+              '4m':false,
+              '5m':false,
+              '6m':false,
+              '7m':false,
+              '8m':false,
+              '9m':false,
+              '1z':false,
+              '2z':false,
+              '3z':false,
+              '4z':false,
+              '5z':false,
+              '6z':false,
+              '7z':false
+            }
+          }
+
+          InitJanpai();
+
+          function UpdateJanpai(){
+            for (var janpai in janpaiz) {
+              if (janpaiz[janpai]){
+                document.getElementById(janpai).className = "janpaiSelected";
+              } else {
+                document.getElementById(janpai).className = "janpaiUnselected";
+              }
+            }
+            SendJanpai(janpaiz);
+          }
+
+          function JanpaiSwitch(janpai){
+            if (janpaiz[janpai] == false) {
+              janpaiz[janpai] = true;
+            } else {
+              janpaiz[janpai] = false;
+            }
+            UpdateJanpai();
+          }
+          function SendMessage(){
+              var message = document.getElementById("chat").value;
+              document.getElementById("chat").value = "";
+              webrtc.sendToAll('chat', {data: message});
+          }
+
+          function SendJanpai(janpai, status){
+              webrtc.sendToAll('janpai', {data: janpai,status: status});
+          }
+
+          function StopLive(){
+            if(OnCall){
+              webrtc.stopLocalVideo();
+              webrtc.leaveRoom();
+              OnCall=false;
+            } else {
+              alert("Not on call yet");
+            }
+          }
+
+          function StartLive(){
+            if(!OnCall) {
+              var mediaOptions = {
+                audio: false,
+                video: false
+              };
+              if (SelectedVideoDevice != "default"){
+                mediaOptions = {
+                    video: {deviceId: SelectedVideoDevice ? {exact: SelectedVideoDevice} : undefined}
+                  };
+              }
+
+              webrtc = new SimpleWebRTC({
+                // the id/element dom element that will hold "our" video
+                localVideoEl: 'localVideo',
+                // the id/element dom element that will hold remote videos
+                remoteVideosEl: '',
+                // immediately ask for camera access
+                autoRequestMedia: true,
+                url: 'https://macbook-pro-de-simon.local:8888',
+                media: mediaOptions
+              });
+            //  webrtc.on('readyToCall', function () {
+                // you can name it anything
+              webrtc.joinRoom('mahjong bot');
+              // a peer video has been added
+              webrtc.on('videoAdded', function (video, peer) {
+                  console.log('video added', peer);
+                  var remotes = document.getElementById('remotes');
+                  if (remotes) {
+                      var container = document.createElement('div');
+                      container.className = 'videoContainer';
+                      container.id = 'container_' + webrtc.getDomId(peer);
+                      container.appendChild(video);
+
+                      // suppress contextmenu
+                      video.oncontextmenu = function () { return false; };
+
+                      remotes.appendChild(container);
+                  }
+              });
+
+              // a peer video was removed
+              webrtc.on('videoRemoved', function (video, peer) {
+                  console.log('video removed ', peer);
+                  var remotes = document.getElementById('remotes');
+                  var el = document.getElementById(peer ? 'container_' + webrtc.getDomId(peer) : 'localScreenContainer');
+                  if (remotes && el) {
+                      remotes.removeChild(el);
+                  }
+              });
+            //  });
+              OnCall=true;
+            } else {
+              alert("Already on call");
+            }
+          }
+
+
+
+          var audioDevices = [],
+              videoDevices = [];
+
+        function updateDisplaySources(){
+          var select = document.getElementById("videoSource");
+          for (var i = select.options.length -1; i >= 0 ; i--){
+            select.remove(i);
+          }
+          for (var i = 0; i!==videoDevices.length;++i){
+            var videoDevice = videoDevices[i];
+            var option = document.createElement("option");
+            option.text = videoDevice.label;
+            option.value = videoDevice.deviceId;
+            select.add(option);
+          }
+        }
+        function getInfo(){
+              videoDevices = [];
+              navigator.mediaDevices.enumerateDevices().then(function (devices) {
+                for (var i = 0; i !== devices.length; ++i) {
+                    var device = devices[i];
+                    if (device.kind === 'audioinput') {
+                        device.label = device.label || 'microphone ' + (audioDevices.length + 1);
+                        audioDevices.push(device);
+                    } else if (device.kind === 'videoinput') {
+                        device.label = device.label || 'camera ' + (videoDevices.length + 1);
+                        videoDevices.push(device);
+                    }
+                }
+              updateDisplaySources();
+              });
+
+        }
+
+        </script>
+    </head>
+    <body>
+      <div class="select">
+        <a href="javascript:void(0);" onclick="StopLive();">Stop Live</a> - <a href="javascript:void(0);" onclick="StartLive();">Start Live</a>
+      </div>
+        <div class="remotes" id="remotes"></div>
+        <div class="Chatbox"><form action="#" onsubmit="SendMessage();return false"><input type="text" id="chat" size="100" /><input type="submit" value="Send Message"></form></div>
+        <div class="Janpai"><table class="center">
+            <tr><td id="1p" onclick="JanpaiSwitch('1p');" class="janpaiUnselected"><img src="janpai/1p.svg" /></td>
+            <td id="2p" onclick="JanpaiSwitch('2p');" class="janpaiUnselected"><img src="janpai/2p.svg" /></td>
+            <td id="3p" onclick="JanpaiSwitch('3p');" class="janpaiUnselected"><img src="janpai/3p.svg" /></td>
+            <td id="4p" onclick="JanpaiSwitch('4p');" class="janpaiUnselected"><img src="janpai/4p.svg" /></td>
+            <td id="5p" onclick="JanpaiSwitch('5p');" class="janpaiUnselected"><img src="janpai/5p.svg" /></td>
+            <td id="6p" onclick="JanpaiSwitch('6p');" class="janpaiUnselected"><img src="janpai/6p.svg" /></td>
+            <td id="7p" onclick="JanpaiSwitch('7p');" class="janpaiUnselected"><img src="janpai/7p.svg" /></td>
+            <td id="8p" onclick="JanpaiSwitch('8p');" class="janpaiUnselected"><img src="janpai/8p.svg" /></td>
+            <td id="9p" onclick="JanpaiSwitch('9p');" class="janpaiUnselected"><img src="janpai/9p.svg" /></td></tr>
+            <tr><td id="1s" onclick="JanpaiSwitch('1s');" class="janpaiUnselected"><img src="janpai/1s.svg" /></td>
+            <td id="2s" onclick="JanpaiSwitch('2s');" class="janpaiUnselected"><img src="janpai/2s.svg" /></td>
+            <td id="3s" onclick="JanpaiSwitch('3s');" class="janpaiUnselected"><img src="janpai/3s.svg" /></td>
+            <td id="4s" onclick="JanpaiSwitch('4s');" class="janpaiUnselected"><img src="janpai/4s.svg" /></td>
+            <td id="5s" onclick="JanpaiSwitch('5s');" class="janpaiUnselected"><img src="janpai/5s.svg" /></td>
+            <td id="6s" onclick="JanpaiSwitch('6s');" class="janpaiUnselected"><img src="janpai/6s.svg" /></td>
+            <td id="7s" onclick="JanpaiSwitch('7s');" class="janpaiUnselected"><img src="janpai/7s.svg" /></td>
+            <td id="8s" onclick="JanpaiSwitch('8s');" class="janpaiUnselected"><img src="janpai/8s.svg" /></td>
+            <td id="9s" onclick="JanpaiSwitch('9s');" class="janpaiUnselected"><img src="janpai/9s.svg" /></td>
+            </tr>
+            <tr><td id="1m" onclick="JanpaiSwitch('1m');" class="janpaiUnselected"><img src="janpai/1m.svg" /></td>
+            <td id="2m" onclick="JanpaiSwitch('2m');" class="janpaiUnselected"><img src="janpai/2m.svg" /></td>
+            <td id="3m" onclick="JanpaiSwitch('3m');" class="janpaiUnselected"><img src="janpai/3m.svg" /></td>
+            <td id="4m" onclick="JanpaiSwitch('4m');" class="janpaiUnselected"><img src="janpai/4m.svg" /></td>
+            <td id="5m" onclick="JanpaiSwitch('5m');" class="janpaiUnselected"><img src="janpai/5m.svg" /></td>
+            <td id="6m" onclick="JanpaiSwitch('6m');" class="janpaiUnselected"><img src="janpai/6m.svg" /></td>
+            <td id="7m" onclick="JanpaiSwitch('7m');" class="janpaiUnselected"><img src="janpai/7m.svg" /></td>
+            <td id="8m" onclick="JanpaiSwitch('8m');" class="janpaiUnselected"><img src="janpai/8m.svg" /></td>
+            <td id="9m" onclick="JanpaiSwitch('9m');" class="janpaiUnselected"><img src="janpai/9m.svg" /></td>
+            </tr>
+            <tr><td id="1z" onclick="JanpaiSwitch('1z');" class="janpaiUnselected"><img src="janpai/1z.svg" /></td>
+            <td id="2z" onclick="JanpaiSwitch('2z');" class="janpaiUnselected"><img src="janpai/2z.svg" /></td>
+            <td id="3z" onclick="JanpaiSwitch('3z');" class="janpaiUnselected"><img src="janpai/3z.svg" /></td>
+            <td id="4z" onclick="JanpaiSwitch('4z');" class="janpaiUnselected"><img src="janpai/4z.svg" /></td>
+            <td id="5z" onclick="JanpaiSwitch('5z');" class="janpaiUnselected"><img src="janpai/5z.svg" /></td>
+            <td id="6z" onclick="JanpaiSwitch('6z');" class="janpaiUnselected"><img src="janpai/6z.svg" /></td>
+            <td id="7z" onclick="JanpaiSwitch('7z');" class="janpaiUnselected"><img src="janpai/7z.svg" /></td>
+            </tr>
+            </table>
+            <a href="javascript:void(0);" onclick="InitJanpai();UpdateJanpai()">Reset Janpai</a>
+          </div>
+    </body>
+</html>
