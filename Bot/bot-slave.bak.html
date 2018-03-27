@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script type="text/javascript" src="latest-v2.js"></script>
+        <style>
+            #remoteVideos video {
+                height: 720px;
+            }
+            #localVideo {
+                height: 50px;
+            }
+
+        </style>
+        <script>
+
+        var SelectedVideoDevice = "default";
+        var webrtc
+      //  SelectedVideoDevice = "872D2B8B8546A60A7A48B00615D97B9760A70C0B";
+
+        function StartLive() {
+
+          var mediaOptions = {
+            audio: false,
+            video: true
+          };
+
+          if (SelectedVideoDevice != "default"){
+            mediaOptions.video = {
+              deviceId: SelectedVideoDevice
+            };
+
+            alert("video source : " + mediaOptions.video.deviceId);
+          }
+
+          webrtc = new SimpleWebRTC({
+            // the id/element dom element that will hold "our" video
+            localVideoEl: 'localVideo',
+            // the id/element dom element that will hold remote videos
+            remoteVideosEl: 'remoteVideos',
+            // immediately ask for camera access
+            autoRequestMedia: true,
+            // Signalmaster setting
+            url: 'https://192.168.1.50:8888',
+            media: mediaOptions
+          });
+          webrtc.stopLocalVideo();
+          webrtc.leaveRoom();
+          webrtc.on('readyToCall', function () {
+            // you can name it anything
+            webrtc.joinRoom('MahjongBot');
+          });
+        }
+
+        StartLive();
+
+          var audioDevices = [],
+              videoDevices = [];
+        function getInfo(){
+
+              navigator.mediaDevices.enumerateDevices().then(function (devices) {
+                for (var i = 0; i !== devices.length; ++i) {
+                    var device = devices[i];
+                    if (device.kind === 'audioinput') {
+                        device.label = device.label || 'microphone ' + (audioDevices.length + 1);
+                        audioDevices.push(device);
+                    } else if (device.kind === 'videoinput') {
+                        device.label = device.label || 'camera ' + (videoDevices.length + 1);
+                        videoDevices.push(device);
+                    }
+                }
+
+              });
+        }
+
+        function RefreshSources(){
+
+          var select = document.getElementById("videoSource");
+          if (select.selectedIndex != -1){
+            SelectedVideoDevice = select.options[select.selectedIndex].value;
+          }
+
+          for (var i = select.options.length -1; i >= 0 ; i--){
+            select.remove(i);
+          }
+          for (var i = 0; i!==videoDevices.length;++i){
+            var videoDevice = videoDevices[i];
+            var option = document.createElement("option");
+            option.text = videoDevice.label;
+            option.value = videoDevice.deviceId;
+            select.add(option);
+          }
+          StartLive();
+        }
+
+
+        </script>
+    </head>
+    <body>
+
+        <video autoplay playsinline muted id="localVideo"></video>
+        <div class="select">
+              <label for="videoSource">Video source: </label><select id="videoSource"></select> (<a href="javascript:void(0);" onclick="getInfo();">Get list of cameras</a> - <a href="javascript:void(0);" onclick="RefreshSources();">Refresh options</a>)
+        </div>
+    </body>
+</html>

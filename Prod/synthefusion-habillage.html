@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>SyntheGen</title>
+<link href="Style.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+
+<div class="Deal" id="Deal">E1</div>
+<div class="Honba" id="Honba">0</div>
+<div class="Player1" id="Player1">Player1</div>
+<div class="Score1" id="Score1">25.0</div>
+<div class="Player2" id="Player2">Player2</div>
+<div class="Score2" id="Score2">25.0</div>
+<div class="Player3" id="Player3">Player3</div>
+<div class="Score3" id="Score3">25.0</div>
+<div class="Player4" id="Player4">Player4</div>
+<div class="Score4" id="Score4">25.0</div>
+<div class="DoraTitle">Dora</div>
+<div class="Dora1" id="Dora1"><img src="janpai/Tile-1s.svg"></div>
+<div class="Dora2" id="Dora2"><img src="janpai/Tile-2s.svg"></div>
+<div class="Dora3" id="Dora3"><img src="janpai/Tile-3s.svg"></div>
+<div class="Dora4" id="Dora4"><img src="janpai/Tile-4s.svg"></div>
+
+<!--
+
+<div class="Player1HUD" id="Player1HUD">Player1</div>
+<div class="Player2HUD" id="Player2HUD">Player2</div>
+<div class="Player3HUD" id="Player3HUD">Player3</div>
+<div class="Player4HUD" id="Player4HUD">Player4</div>
+-->
+
+<script type="text/javascript">
+
+function OpenDisplay() {
+  SyntheDisp=open('synthedisp.html','winname','width=640,height=640')
+}
+
+function updateElement(element) {
+  var content = document.forms["updateDisp"][element].value;
+  document.getElementById(element).innerHTML=content;
+}
+
+function updateOya() {
+  document.querySelector("#Player1").style.color = "white";
+  document.querySelector("#Player2").style.color = "white";
+  document.querySelector("#Player3").style.color = "white";
+  document.querySelector("#Player4").style.color = "white";
+  var oya = document.forms["updateDisp"]["oya"].value;
+  document.querySelector("#Player" + oya).style.color = "red";
+
+  document.querySelector("#Score1").style.color = "white";
+  document.querySelector("#Score2").style.color = "white";
+  document.querySelector("#Score3").style.color = "white";
+  document.querySelector("#Score4").style.color = "white";
+  var oya = document.forms["updateDisp"]["oya"].value;
+  document.querySelector("#Score" + oya).style.color = "red";
+}
+
+function updatePlayerHUD() {
+  var oya = parseInt(document.forms["updateDisp"]["oya"].value);
+  var oya1 = (6-oya)%4;
+  var oya2 = (7-oya)%4;
+  var oya3 = (8-oya)%4;
+  var oya4 = (9-oya)%4;
+  var wind1 = '<span class="Est">東</span> ';
+  var wind2 = '<span class="Sud">南</span> ';
+  var wind3 = '<span class="Ouest">西</span> ';
+  var wind0 = '<span class="Nord">北</span> ';
+  eval("var Seat"+1+" = wind"+oya1+"");
+  eval("var Seat"+2+" = wind"+oya2+"");
+  eval("var Seat"+3+" = wind"+oya3+"");
+  eval("var Seat"+4+" = wind"+oya4+"");
+  var Player1 = document.forms["updateDisp"]["Player1"].value;
+  document.getElementById("Player1HUD").innerHTML=Seat1+Player1;
+  var Player2 = document.forms["updateDisp"]["Player2"].value;
+  document.getElementById("Player2HUD").innerHTML=Seat2+Player2;
+  var Player3 = document.forms["updateDisp"]["Player3"].value;
+  document.getElementById("Player3HUD").innerHTML=Seat3+Player3;
+  var Player4 = document.forms["updateDisp"]["Player4"].value;
+  document.getElementById("Player4HUD").innerHTML=Seat4+Player4;
+
+  var Rotate1 = document.forms["updateDisp"]["Rotate1"].value;
+  document.getElementById("Player1HUD").style.transform = "rotate("+Rotate1+"deg)";
+
+  var Rotate2 = document.forms["updateDisp"]["Rotate2"].value;
+  document.getElementById("Player2HUD").style.transform = "rotate("+Rotate2+"deg)";
+
+  var Rotate3 = document.forms["updateDisp"]["Rotate3"].value;
+  document.getElementById("Player3HUD").style.transform = "rotate("+Rotate3+"deg)";
+
+  var Rotate4 = document.forms["updateDisp"]["Rotate4"].value;
+  document.getElementById("Player4HUD").style.transform = "rotate("+Rotate4+"deg)";
+}
+
+
+function updateDisplay() {
+  updateElement('Player1');
+  updateElement('Player2');
+  updateElement('Player3');
+  updateElement('Player4');
+  updateElement('Score1');
+  updateElement('Score2');
+  updateElement('Score3');
+  updateElement('Score4');
+  updateElement('Deal');
+  updateElement('Honba');
+  updateElement('Dora1');
+  updateElement('Dora2');
+  updateElement('Dora3');
+  updateElement('Dora4');
+  updateOya();
+//  updatePlayerHUD();
+  window.location.href = "#top";
+}
+
+</script>
+
+
+<div class="Settings">
+<form name="updateDisp" action="">
+<table border=1>
+<tr><td>Deal</td><td>Honba</td><td>Dora 1</td><td>Dora 2</td><td>Dora 3</td><td>Dora 4</td></tr>
+<tr><td><select size="10" name="Deal">
+<option value="E1" selected>E1</option>
+<option value="E2">E2</option>
+<option value="E3">E3</option>
+<option value="E4">E4</option>
+<option value="S1">S1</option>
+<option value="S2">S2</option>
+<option value="S3">S3</option>
+<option value="S4">S4</option>
+</select></td>
+<td><select size="10" name="Honba">
+<option value="" selected>0</option>
+<option value=" - 1">1</option>
+<option value=" - 2">2</option>
+<option value=" - 3">3</option>
+<option value=" - 4">4</option>
+<option value=" - 5">5</option>
+<option value=" - 6">6</option>
+<option value=" - 7">7</option>
+<option value=" - 8">8</option>
+<option value=" - 9">9</option>
+<option value=" - 10">10</option>
+</select></td>
+<td><select size="10" name="Dora1">
+<option value="" selected>None</option>
+
+<option value="<img src=&quot;janpai/Tile-1s.svg&quot;>">1s</option>
+<option value="<img src=&quot;janpai/Tile-2s.svg&quot;>">2s</option>
+<option value="<img src=&quot;janpai/Tile-3s.svg&quot;>">3s</option>
+<option value="<img src=&quot;janpai/Tile-4s.svg&quot;>">4s</option>
+<option value="<img src=&quot;janpai/Tile-5s.svg&quot;>">5s</option>
+<option value="<img src=&quot;janpai/Tile-6s.svg&quot;>">6s</option>
+<option value="<img src=&quot;janpai/Tile-7s.svg&quot;>">7s</option>
+<option value="<img src=&quot;janpai/Tile-8s.svg&quot;>">8s</option>
+<option value="<img src=&quot;janpai/Tile-9s.svg&quot;>">9s</option>
+
+<option value="<img src=&quot;janpai/Tile-1m.svg&quot;>">1m</option>
+<option value="<img src=&quot;janpai/Tile-2m.svg&quot;>">2m</option>
+<option value="<img src=&quot;janpai/Tile-3m.svg&quot;>">3m</option>
+<option value="<img src=&quot;janpai/Tile-4m.svg&quot;>">4m</option>
+<option value="<img src=&quot;janpai/Tile-5m.svg&quot;>">5m</option>
+<option value="<img src=&quot;janpai/Tile-6m.svg&quot;>">6m</option>
+<option value="<img src=&quot;janpai/Tile-7m.svg&quot;>">7m</option>
+<option value="<img src=&quot;janpai/Tile-8m.svg&quot;>">8m</option>
+<option value="<img src=&quot;janpai/Tile-9m.svg&quot;>">9m</option>
+
+<option value="<img src=&quot;janpai/Tile-1p.svg&quot;>">1p</option>
+<option value="<img src=&quot;janpai/Tile-2p.svg&quot;>">2p</option>
+<option value="<img src=&quot;janpai/Tile-3p.svg&quot;>">3p</option>
+<option value="<img src=&quot;janpai/Tile-4p.svg&quot;>">4p</option>
+<option value="<img src=&quot;janpai/Tile-5p.svg&quot;>">5p</option>
+<option value="<img src=&quot;janpai/Tile-6p.svg&quot;>">6p</option>
+<option value="<img src=&quot;janpai/Tile-7p.svg&quot;>">7p</option>
+<option value="<img src=&quot;janpai/Tile-8p.svg&quot;>">8p</option>
+<option value="<img src=&quot;janpai/Tile-9p.svg&quot;>">9p</option>
+
+<option value="<img src=&quot;janpai/Tile-1z.svg&quot;>">Est</option>
+<option value="<img src=&quot;janpai/Tile-2z.svg&quot;>">Sud</option>
+<option value="<img src=&quot;janpai/Tile-3z.svg&quot;>">Ouest</option>
+<option value="<img src=&quot;janpai/Tile-4z.svg&quot;>">Nord</option>
+<option value="<img src=&quot;janpai/Tile-5z.svg&quot;>">Haku</option>
+<option value="<img src=&quot;janpai/Tile-6z.svg&quot;>">Hatsu</option>
+<option value="<img src=&quot;janpai/Tile-7z.svg&quot;>">Chun</option>
+
+</select></td>
+<td><select size="10" name="Dora2">
+<option value="" selected>None</option>
+
+<option value="<img src=&quot;janpai/Tile-1s.svg&quot;>">1s</option>
+<option value="<img src=&quot;janpai/Tile-2s.svg&quot;>">2s</option>
+<option value="<img src=&quot;janpai/Tile-3s.svg&quot;>">3s</option>
+<option value="<img src=&quot;janpai/Tile-4s.svg&quot;>">4s</option>
+<option value="<img src=&quot;janpai/Tile-5s.svg&quot;>">5s</option>
+<option value="<img src=&quot;janpai/Tile-6s.svg&quot;>">6s</option>
+<option value="<img src=&quot;janpai/Tile-7s.svg&quot;>">7s</option>
+<option value="<img src=&quot;janpai/Tile-8s.svg&quot;>">8s</option>
+<option value="<img src=&quot;janpai/Tile-9s.svg&quot;>">9s</option>
+
+<option value="<img src=&quot;janpai/Tile-1m.svg&quot;>">1m</option>
+<option value="<img src=&quot;janpai/Tile-2m.svg&quot;>">2m</option>
+<option value="<img src=&quot;janpai/Tile-3m.svg&quot;>">3m</option>
+<option value="<img src=&quot;janpai/Tile-4m.svg&quot;>">4m</option>
+<option value="<img src=&quot;janpai/Tile-5m.svg&quot;>">5m</option>
+<option value="<img src=&quot;janpai/Tile-6m.svg&quot;>">6m</option>
+<option value="<img src=&quot;janpai/Tile-7m.svg&quot;>">7m</option>
+<option value="<img src=&quot;janpai/Tile-8m.svg&quot;>">8m</option>
+<option value="<img src=&quot;janpai/Tile-9m.svg&quot;>">9m</option>
+
+<option value="<img src=&quot;janpai/Tile-1p.svg&quot;>">1p</option>
+<option value="<img src=&quot;janpai/Tile-2p.svg&quot;>">2p</option>
+<option value="<img src=&quot;janpai/Tile-3p.svg&quot;>">3p</option>
+<option value="<img src=&quot;janpai/Tile-4p.svg&quot;>">4p</option>
+<option value="<img src=&quot;janpai/Tile-5p.svg&quot;>">5p</option>
+<option value="<img src=&quot;janpai/Tile-6p.svg&quot;>">6p</option>
+<option value="<img src=&quot;janpai/Tile-7p.svg&quot;>">7p</option>
+<option value="<img src=&quot;janpai/Tile-8p.svg&quot;>">8p</option>
+<option value="<img src=&quot;janpai/Tile-9p.svg&quot;>">9p</option>
+
+<option value="<img src=&quot;janpai/Tile-1z.svg&quot;>">Est</option>
+<option value="<img src=&quot;janpai/Tile-2z.svg&quot;>">Sud</option>
+<option value="<img src=&quot;janpai/Tile-3z.svg&quot;>">Ouest</option>
+<option value="<img src=&quot;janpai/Tile-4z.svg&quot;>">Nord</option>
+<option value="<img src=&quot;janpai/Tile-5z.svg&quot;>">Haku</option>
+<option value="<img src=&quot;janpai/Tile-6z.svg&quot;>">Hatsu</option>
+<option value="<img src=&quot;janpai/Tile-7z.svg&quot;>">Chun</option>
+
+</select></td>
+<td><select size="10" name="Dora3">
+<option value="" selected>None</option>
+
+<option value="<img src=&quot;janpai/Tile-1s.svg&quot;>">1s</option>
+<option value="<img src=&quot;janpai/Tile-2s.svg&quot;>">2s</option>
+<option value="<img src=&quot;janpai/Tile-3s.svg&quot;>">3s</option>
+<option value="<img src=&quot;janpai/Tile-4s.svg&quot;>">4s</option>
+<option value="<img src=&quot;janpai/Tile-5s.svg&quot;>">5s</option>
+<option value="<img src=&quot;janpai/Tile-6s.svg&quot;>">6s</option>
+<option value="<img src=&quot;janpai/Tile-7s.svg&quot;>">7s</option>
+<option value="<img src=&quot;janpai/Tile-8s.svg&quot;>">8s</option>
+<option value="<img src=&quot;janpai/Tile-9s.svg&quot;>">9s</option>
+
+<option value="<img src=&quot;janpai/Tile-1m.svg&quot;>">1m</option>
+<option value="<img src=&quot;janpai/Tile-2m.svg&quot;>">2m</option>
+<option value="<img src=&quot;janpai/Tile-3m.svg&quot;>">3m</option>
+<option value="<img src=&quot;janpai/Tile-4m.svg&quot;>">4m</option>
+<option value="<img src=&quot;janpai/Tile-5m.svg&quot;>">5m</option>
+<option value="<img src=&quot;janpai/Tile-6m.svg&quot;>">6m</option>
+<option value="<img src=&quot;janpai/Tile-7m.svg&quot;>">7m</option>
+<option value="<img src=&quot;janpai/Tile-8m.svg&quot;>">8m</option>
+<option value="<img src=&quot;janpai/Tile-9m.svg&quot;>">9m</option>
+
+<option value="<img src=&quot;janpai/Tile-1p.svg&quot;>">1p</option>
+<option value="<img src=&quot;janpai/Tile-2p.svg&quot;>">2p</option>
+<option value="<img src=&quot;janpai/Tile-3p.svg&quot;>">3p</option>
+<option value="<img src=&quot;janpai/Tile-4p.svg&quot;>">4p</option>
+<option value="<img src=&quot;janpai/Tile-5p.svg&quot;>">5p</option>
+<option value="<img src=&quot;janpai/Tile-6p.svg&quot;>">6p</option>
+<option value="<img src=&quot;janpai/Tile-7p.svg&quot;>">7p</option>
+<option value="<img src=&quot;janpai/Tile-8p.svg&quot;>">8p</option>
+<option value="<img src=&quot;janpai/Tile-9p.svg&quot;>">9p</option>
+
+<option value="<img src=&quot;janpai/Tile-1z.svg&quot;>">Est</option>
+<option value="<img src=&quot;janpai/Tile-2z.svg&quot;>">Sud</option>
+<option value="<img src=&quot;janpai/Tile-3z.svg&quot;>">Ouest</option>
+<option value="<img src=&quot;janpai/Tile-4z.svg&quot;>">Nord</option>
+<option value="<img src=&quot;janpai/Tile-5z.svg&quot;>">Haku</option>
+<option value="<img src=&quot;janpai/Tile-6z.svg&quot;>">Hatsu</option>
+<option value="<img src=&quot;janpai/Tile-7z.svg&quot;>">Chun</option>
+
+</select></td>
+<td><select size="10" name="Dora4">
+<option value="" selected>None</option>
+
+<option value="<img src=&quot;janpai/Tile-1s.svg&quot;>">1s</option>
+<option value="<img src=&quot;janpai/Tile-2s.svg&quot;>">2s</option>
+<option value="<img src=&quot;janpai/Tile-3s.svg&quot;>">3s</option>
+<option value="<img src=&quot;janpai/Tile-4s.svg&quot;>">4s</option>
+<option value="<img src=&quot;janpai/Tile-5s.svg&quot;>">5s</option>
+<option value="<img src=&quot;janpai/Tile-6s.svg&quot;>">6s</option>
+<option value="<img src=&quot;janpai/Tile-7s.svg&quot;>">7s</option>
+<option value="<img src=&quot;janpai/Tile-8s.svg&quot;>">8s</option>
+<option value="<img src=&quot;janpai/Tile-9s.svg&quot;>">9s</option>
+
+<option value="<img src=&quot;janpai/Tile-1m.svg&quot;>">1m</option>
+<option value="<img src=&quot;janpai/Tile-2m.svg&quot;>">2m</option>
+<option value="<img src=&quot;janpai/Tile-3m.svg&quot;>">3m</option>
+<option value="<img src=&quot;janpai/Tile-4m.svg&quot;>">4m</option>
+<option value="<img src=&quot;janpai/Tile-5m.svg&quot;>">5m</option>
+<option value="<img src=&quot;janpai/Tile-6m.svg&quot;>">6m</option>
+<option value="<img src=&quot;janpai/Tile-7m.svg&quot;>">7m</option>
+<option value="<img src=&quot;janpai/Tile-8m.svg&quot;>">8m</option>
+<option value="<img src=&quot;janpai/Tile-9m.svg&quot;>">9m</option>
+
+<option value="<img src=&quot;janpai/Tile-1p.svg&quot;>">1p</option>
+<option value="<img src=&quot;janpai/Tile-2p.svg&quot;>">2p</option>
+<option value="<img src=&quot;janpai/Tile-3p.svg&quot;>">3p</option>
+<option value="<img src=&quot;janpai/Tile-4p.svg&quot;>">4p</option>
+<option value="<img src=&quot;janpai/Tile-5p.svg&quot;>">5p</option>
+<option value="<img src=&quot;janpai/Tile-6p.svg&quot;>">6p</option>
+<option value="<img src=&quot;janpai/Tile-7p.svg&quot;>">7p</option>
+<option value="<img src=&quot;janpai/Tile-8p.svg&quot;>">8p</option>
+<option value="<img src=&quot;janpai/Tile-9p.svg&quot;>">9p</option>
+
+<option value="<img src=&quot;janpai/Tile-1z.svg&quot;>">Est</option>
+<option value="<img src=&quot;janpai/Tile-2z.svg&quot;>">Sud</option>
+<option value="<img src=&quot;janpai/Tile-3z.svg&quot;>">Ouest</option>
+<option value="<img src=&quot;janpai/Tile-4z.svg&quot;>">Nord</option>
+<option value="<img src=&quot;janpai/Tile-5z.svg&quot;>">Haku</option>
+<option value="<img src=&quot;janpai/Tile-6z.svg&quot;>">Hatsu</option>
+<option value="<img src=&quot;janpai/Tile-7z.svg&quot;>">Chun</option>
+
+</select></td></tr>
+</table>
+
+<table border=1>
+<tr><th>#</th><th>親</th><th>Name</th><th>Score</th></tr>
+<tr><td>1</td><td><input type="radio" name="oya" value="1" checked></td><td><input type="text" name="Player1" value="Player 1"></td><td><textarea rows="2" name="Score1">25.0
+(±0)</textarea></td></tr>
+<tr><td>2</td><td><input type="radio" name="oya" value="2"></td><td><input type="text" name="Player2" value="Player 2"></td><td><textarea rows="2" name="Score2">25.0
+(±0)</textarea></td></tr>
+<tr><td>3</td><td><input type="radio" name="oya" value="3"></td><td><input type="text" name="Player3" value="Player 3"></td><td><textarea rows="2" name="Score3">25.0
+(±0)</textarea></td></tr>
+<tr><td>4</td><td><input type="radio" name="oya" value="4"></td><td><input type="text" name="Player4" value="Player 4"></td><td><textarea rows="2" name="Score4">25.0
+(±0)</textarea></td></tr>
+</table>
+<input type="button" value="Update Display" onClick="updateDisplay();">
+
+</form>
+</div>
+
+<!--
+<div class="SettingsHUD">
+<form name="updateDisp" action="">
+
+
+<table border=1>
+<tr><th>#</th><th>⤵︎</th><th>親</th><th>Name</th></tr>
+<tr><td>1</td><td><input type="text" size="3" name="Rotate1" value="0"></td><td><input type="radio" name="oya" value="1" checked></td><td><input type="text" name="Player1" value="Player 1"></td>/tr>
+<tr><td>2</td><td><input type="text" size="3" name="Rotate2" value="0"></td><td><input type="radio" name="oya" value="2"></td><td><input type="text" name="Player2" value="Player 2"></td></tr>
+<tr><td>3</td><td><input type="text" size="3" name="Rotate3" value="0"></td><td><input type="radio" name="oya" value="3"></td><td><input type="text" name="Player3" value="Player 3"></td></tr>
+<tr><td>4</td><td><input type="text" size="3" name="Rotate4" value="0"></td><td><input type="radio" name="oya" value="4"></td><td><input type="text" name="Player4" value="Player 4"></td></tr>
+</table>
+<input type="button" value="Update Display" onClick="updateDisplay();">
+
+</form>
+</div>
+
+-->
+
+</body>
+</html>

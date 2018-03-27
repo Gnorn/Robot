@@ -1,0 +1,2 @@
+-Clean code
+-Allow user to reorganize the order of sources (right now they are determined by the order of connection)

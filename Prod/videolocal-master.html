@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://simplewebrtc.com/latest-v2.js"></script>
+        <link href="Style.css" rel="stylesheet" type="text/css" />
+        <style>
+            #remoteVideos video {
+                height: 720px;
+            }
+            #localVideo {
+                height: 50px;
+            }
+            .Final {
+              position:relative;
+              top:280px;
+              height:360px;
+              width:640px;
+            }
+            .HUD {
+                z-index: 11;
+                position:absolute;
+                text-align:center;
+                width:20%;
+                margin-left: 40%;
+                top:20px;
+                background-color: white;
+                opacity:0.75;
+                font-size:20px;
+                font-weight: bold;
+            }
+            .Janpai {
+                position:absolute;
+                top:550px;
+            }
+            .Chatbox {
+                position: absolute;
+                top:30px;
+                left:20px;
+                height: 480px;
+                width: 860px;
+            }
+            .remotes {
+                position: absolute;
+                top:60px;
+                height: 480px;
+                width: 860px;
+            }
+            .videoContainer {
+                position: relative;
+                height: 180px;
+                width: 320px;
+                float:left;
+            }
+            .videoContainer video {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+            }
+            .janpaiSelected {
+                background-color: green;
+            }
+            .janpaiUnselected {
+                opacity:0.5;
+            }
+            img{
+                height:100%;
+                width:100%;
+            }
+            .janpaiUnselected:hover {
+                opacity:1.0;
+            }
+
+        </style>
+        <script>
+
+          var SelectedVideoDevice = "default";
+          var webrtc;
+          var OnCall = false;
+
+          var janpaiz;
+          var Peerz = [];
+
+          function InitJanpai(){
+            janpaiz = {
+              '1p':false,
+              '2p':false,
+              '3p':false,
+              '4p':false,
+              '5p':false,
+              '6p':false,
+              '7p':false,
+              '8p':false,
+              '9p':false,
+              '1s':false,
+              '2s':false,
+              '3s':false,
+              '4s':false,
+              '5s':false,
+              '6s':false,
+              '7s':false,
+              '8s':false,
+              '9s':false,
+              '1m':false,
+              '2m':false,
+              '3m':false,
+              '4m':false,
+              '5m':false,
+              '6m':false,
+              '7m':false,
+              '8m':false,
+              '9m':false,
+              '1z':false,
+              '2z':false,
+              '3z':false,
+              '4z':false,
+              '5z':false,
+              '6z':false,
+              '7z':false
+            }
+          }
+
+          InitJanpai();
+
+          function UpdateJanpai(){
+            for (var janpai in janpaiz) {
+              if (janpaiz[janpai]){
+                document.getElementById(janpai).className = "janpaiSelected";
+              } else {
+                document.getElementById(janpai).className = "janpaiUnselected";
+              }
+            }
+            SendJanpai(janpaiz);
+          }
+
+          function JanpaiSwitch(janpai){
+            if (janpaiz[janpai] == false) {
+              janpaiz[janpai] = true;
+            } else {
+              janpaiz[janpai] = false;
+            }
+            UpdateJanpai();
+          }
+          function SendMessage(){
+              var message = document.getElementById("chat").value;
+              document.getElementById("chat").value = "";
+              webrtc.sendToAll('chat', {data: message});
+          }
+
+          function SendJanpai(janpai, status){
+              webrtc.sendToAll('janpai', {data: janpai,status: status});
+          }
+
+          function StopLive(){
+            if(OnCall){
+              webrtc.stopLocalVideo();
+              webrtc.leaveRoom();
+              OnCall=false;
+            } else {
+              alert("Not on call yet");
+            }
+          }
+
+          function StartLive(){
+            if(!OnCall) {
+              var mediaOptions = {
+                audio: false,
+                video: false
+              };
+              if (SelectedVideoDevice != "default"){
+                mediaOptions = {
+                    video: {deviceId: SelectedVideoDevice ? {exact: SelectedVideoDevice} : undefined}
+                  };
+              }
+
+              webrtc = new SimpleWebRTC({
+                // the id/element dom element that will hold "our" video
+                localVideoEl: 'localVideo',
+                // the id/element dom element that will hold remote videos
+                remoteVideosEl: '',
+                // immediately ask for camera access
+                autoRequestMedia: true,
+                url: 'https://macbook-pro-de-simon.local:8889',
+                media: mediaOptions
+              });
+            //  webrtc.on('readyToCall', function () {
+                // you can name it anything
+              webrtc.joinRoom('mahjong bot');
+
+
+              // a peer video has been added
+              webrtc.on('videoAdded', function (video, peer) {
+                  Peerz.push(peer.id, peer.nick, video);
+                  var remotes = document.getElementById('remotes');
+                  if (remotes) {
+                      var container = document.createElement('div');
+                      container.className = 'videoContainer';
+                      container.addEventListener('click',function() {SetFinalVideo(webrtc.getDomId(peer))},false);
+                      container.id = 'container_' + webrtc.getDomId(peer);
+                      container.appendChild(video);
+                      var HUD = document.createElement('div');
+                      HUD.className = 'HUD';
+                      HUD.innerHTML = peer.nick;
+                      container.appendChild(HUD);
+                      // suppress contextmenu
+                      video.oncontextmenu = function () { return false; };
+
+                      remotes.appendChild(container);
+                  }
+              });
+
+              // a peer video was removed
+              webrtc.on('videoRemoved', function (video, peer) {
+                  console.log('video removed ', peer);
+                  var remotes = document.getElementById('remotes');
+                  var el = document.getElementById(peer ? 'container_' + webrtc.getDomId(peer) : 'localScreenContainer');
+                  if (remotes && el) {
+                      remotes.removeChild(el);
+                  }
+              });
+            //  });
+              OnCall=true;
+            } else {
+              alert("Already on call");
+            }
+          }
+
+
+
+          var audioDevices = [],
+              videoDevices = [];
+
+        function updateDisplaySources(){
+          var select = document.getElementById("videoSource");
+          for (var i = select.options.length -1; i >= 0 ; i--){
+            select.remove(i);
+          }
+          for (var i = 0; i!==videoDevices.length;++i){
+            var videoDevice = videoDevices[i];
+            var option = document.createElement("option");
+            option.text = videoDevice.label;
+            option.value = videoDevice.deviceId;
+            select.add(option);
+          }
+        }
+        function getInfo(){
+              videoDevices = [];
+              navigator.mediaDevices.enumerateDevices().then(function (devices) {
+                for (var i = 0; i !== devices.length; ++i) {
+                    var device = devices[i];
+                    if (device.kind === 'audioinput') {
+                        device.label = device.label || 'microphone ' + (audioDevices.length + 1);
+                        audioDevices.push(device);
+                    } else if (device.kind === 'videoinput') {
+                        device.label = device.label || 'camera ' + (videoDevices.length + 1);
+                        videoDevices.push(device);
+                    }
+                }
+              updateDisplaySources();
+              });
+
+        }
+        var FinalWindow
+        function OpenFinal(){
+          FinalWindow = window.open('videolocal-final.html');
+        }
+
+        function SetFinalVideo(videoid){
+          webrtc.sendToAll('videosource', {data: videoid});
+        }
+        function SwitchHUDFinal(state){
+          webrtc.sendToAll('HUDFinalDisplay', {data: state});
+          updateDisplay();
+        }
+
+        window.onkeypress = function(e) {
+          var key = e.code;
+          if (/^(Digit[0-9])$/.test(e.code) && e.shiftKey == false){
+            SelectVideoSource(key.slice(-1));
+          }
+        }
+
+        function SelectVideoSource(keypress){
+          var remoteId = document.getElementById("remotes").children[keypress-1].id;
+          if(remoteId){
+            SetFinalVideo(remoteId);
+          }
+        }
+
+        function updateHudFinal() {
+          var HUDFinalContent = document.getElementById("HUDFinal").innerHTML;
+          webrtc.sendToAll('HUDFinalContent', {data: HUDFinalContent});
+        }
+
+        function updateSourcesListHud(){
+          var SourcesListHud = [];
+          var select1 = document.getElementById("videoSourcePlayer1");
+          var select2 = document.getElementById("videoSourcePlayer2");
+          var select3 = document.getElementById("videoSourcePlayer3");
+          var select4 = document.getElementById("videoSourcePlayer4");
+          for (var i = select1.options.length -1; i >= 0 ; i--){
+            select1.remove(i);
+          }
+          for (var i = select2.options.length -1; i >= 0 ; i--){
+            select2.remove(i);
+          }
+          for (var i = select3.options.length -1; i >= 0 ; i--){
+            select3.remove(i);
+          }
+          for (var i = select4.options.length -1; i >= 0 ; i--){
+            select4.remove(i);
+          }
+
+          var option1 = document.createElement("option");
+          option1.text = "None";
+          option1.value = "none";
+          var option2 = option1.cloneNode(true);
+          var option3 = option1.cloneNode(true);
+          var option4 = option1.cloneNode(true);
+          select1.add(option1);
+          select2.add(option2);
+          select3.add(option3);
+          select4.add(option4);
+
+          var sources = document.getElementById("remotes").children
+          for (var i = 0; i !== sources.length; ++i) {
+                              var source = sources[i];
+                              var containerid = source.id;
+                              var nick = source.getElementsByClassName("HUD")[0].innerHTML;
+                              var option1 = document.createElement("option");
+                              option1.text = nick;
+                              option1.value = containerid;
+                              var option2 = option1.cloneNode(true);
+                              var option3 = option1.cloneNode(true);
+                              var option4 = option1.cloneNode(true);
+                              select1.add(option1);
+                              select2.add(option2);
+                              select3.add(option3);
+                              select4.add(option4);
+                          }
+        }
+
+        </script>
+
+        <script type="text/javascript">
+
+        function OpenDisplay() {
+          SyntheDisp=open('synthedisp.html','winname','width=640,height=640')
+        }
+
+        function updateElement(element) {
+          var content = document.forms["updateDisp"][element].value;
+          document.getElementById(element).innerHTML=content;
+        }
+
+        function updateOya() {
+          document.querySelector("#Player1").style.color = "white";
+          document.querySelector("#Player2").style.color = "white";
+          document.querySelector("#Player3").style.color = "white";
+          document.querySelector("#Player4").style.color = "white";
+          var oya = document.forms["updateDisp"]["oya"].value;
+          document.querySelector("#Player" + oya).style.color = "red";
+
+          document.querySelector("#Score1").style.color = "white";
+          document.querySelector("#Score2").style.color = "white";
+          document.querySelector("#Score3").style.color = "white";
+          document.querySelector("#Score4").style.color = "white";
+          var oya = document.forms["updateDisp"]["oya"].value;
+          document.querySelector("#Score" + oya).style.color = "red";
+        }
+
+        function updatePlayerHUD() {
+          var oya = parseInt(document.forms["updateDisp"]["oya"].value);
+          var oya1 = (6-oya)%4;
+          var oya2 = (7-oya)%4;
+          var oya3 = (8-oya)%4;
+          var oya4 = (9-oya)%4;
+          var wind1 = '<span class="Est">東</span> ';
+          var wind2 = '<span class="Sud">南</span> ';
+          var wind3 = '<span class="Ouest">西</span> ';
+          var wind0 = '<span class="Nord">北</span> ';
+          eval("var Seat"+1+" = wind"+oya1+"");
+          eval("var Seat"+2+" = wind"+oya2+"");
+          eval("var Seat"+3+" = wind"+oya3+"");
+          eval("var Seat"+4+" = wind"+oya4+"");
+          var Player1 = document.forms["updateDisp"]["Player1"].value;
+          var Player1label=Seat1+Player1;
+          var Player1source = document.forms["updateDisp"]["videoSourcePlayer1"].value;
+          var Player2 = document.forms["updateDisp"]["Player2"].value;
+          var Player2label = Seat2+Player2;
+          var Player2source = document.forms["updateDisp"]["videoSourcePlayer2"].value;
+          var Player3 = document.forms["updateDisp"]["Player3"].value;
+          var Player3label = Seat3+Player3;
+          var Player3source = document.forms["updateDisp"]["videoSourcePlayer3"].value;
+          var Player4 = document.forms["updateDisp"]["Player4"].value;
+          var Player4label = Seat4+Player4;
+          var Player4source = document.forms["updateDisp"]["videoSourcePlayer4"].value;
+
+          var Rotate1 = (document.getElementById("Rotate1").value*360).toFixed(10);
+          //var Rotate1 = document.forms["updateDisp"]["Rotate1"].value;
+          //document.getElementById("Player1HUD").style.transform = "rotate("+Rotate1+"deg)";
+
+          var Rotate2 = (document.getElementById("Rotate2").value*360).toFixed(10);
+          var Rotate3 = (document.getElementById("Rotate3").value*360).toFixed(10);
+          var Rotate4 = (document.getElementById("Rotate4").value*360).toFixed(10);
+
+
+          var old = document.getElementById("Player1HUDMaster");
+          if(old){
+            old.outerHTML='';
+          }
+          var old = document.getElementById("Player2HUDMaster");
+          if(old){
+            old.outerHTML='';
+          }
+          var old = document.getElementById("Player3HUDMaster");
+          if(old){
+            old.outerHTML='';
+          }
+          var old = document.getElementById("Player4HUDMaster");
+          if(old){
+            old.outerHTML='';
+          }
+
+
+          if (Player1source != "none"){
+
+            container = document.getElementById(Player1source);
+            var HUD = document.createElement('div');
+            HUD.className = 'Player1HUDMaster';
+            HUD.id = 'Player1HUDMaster';
+            HUD.innerHTML = Player1label;
+            HUD.style.transform = "rotate("+Rotate1+"deg)";
+            container.appendChild(HUD);
+          }
+
+          if (Player2source != "none"){
+
+            container = document.getElementById(Player2source);
+            var HUD = document.createElement('div');
+            HUD.className = 'Player2HUDMaster';
+            HUD.id = 'Player2HUDMaster';
+            HUD.innerHTML = Player2label;
+            container.appendChild(HUD);
+          }
+
+          if (Player3source != "none"){
+
+            container = document.getElementById(Player3source);
+            var HUD = document.createElement('div');
+            HUD.className = 'Player3HUDMaster';
+            HUD.id = 'Player3HUDMaster';
+            HUD.innerHTML = Player3label;
+            container.appendChild(HUD);
+          }
+
+          if (Player4source != "none"){
+
+            container = document.getElementById(Player4source);
+            var HUD = document.createElement('div');
+            HUD.className = 'Player4HUDMaster';
+            HUD.id = 'Player4HUDMaster';
+            HUD.innerHTML = Player4label;
+            container.appendChild(HUD);
+          }
+
+          webrtc.sendToAll('PlayersHUD', {
+            Player1source: Player1source,
+            Player1label:Player1label,
+            Rotate1:Rotate1,
+            Player2source: Player2source,
+            Player2label:Player2label,
+            Rotate2:Rotate2,
+            Player3source: Player3source,
+            Player3label:Player3label,
+            Rotate3:Rotate3,
+            Player4source: Player4source,
+            Player4label:Player4label,
+            Rotate4:Rotate4
+          });
+
+        }
+
+
+        function updateDisplay() {
+          updateElement('Player1');
+          updateElement('Player2');
+          updateElement('Player3');
+          updateElement('Player4');
+          updateElement('Score1');
+          updateElement('Score2');
+          updateElement('Score3');
+          updateElement('Score4');
+          updateElement('Deal');
+          updateElement('Honba');
+          updateElement('Dora1');
+          updateElement('Dora2');
+          updateElement('Dora3');
+          updateElement('Dora4');
+          updateOya();
+          updateHudFinal();
+          updatePlayerHUD()
+        }
+
+        </script>
+        <script type="text/javascript">
+        if (!document.registerElement) {
+        	document.writeln(decodeURI('%3Cscript%20src=%22https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/0.7.12/webcomponents.min.js%22%20type=%22text/javascript%22%3E%3C/script%3E'));
+        }
+        </script>
+        <script src="xknob.js" type="text/javascript" async></script>
+        <link href="xknob.css" type="text/css" rel="stylesheet">
+    </head>
+    <body>
+      <div class="select">
+        <a href="javascript:void(0);" onclick="StopLive();">Stop Live</a> - <a href="javascript:void(0);" onclick="StartLive();">Start Live</a> - <a href="javascript:void(0);" onclick="OpenFinal();">Open Final window</a>
+      </div>
+        <div class="remotes" id="remotes"></div>
+        <div class="Chatbox"><form action="#" onsubmit="SendMessage();return false"><input type="text" id="chat" size="100" /><input type="submit" value="Send Message"></form></div>
+
+        <div id="HUDFinal" class="HUDFinalWrapperMaster">
+        <div class="Deal TextHUD" id="Deal">E1</div>
+        <div class="Honba TextHUD" id="Honba">0</div>
+        <div class="Player1 TextHUD" id="Player1">Player1</div>
+        <div class="Score1 TextHUD" id="Score1">25.0</div>
+        <div class="Player2 TextHUD" id="Player2">Player2</div>
+        <div class="Score2 TextHUD" id="Score2">25.0</div>
+        <div class="Player3 TextHUD" id="Player3">Player3</div>
+        <div class="Score3 TextHUD" id="Score3">25.0</div>
+        <div class="Player4 TextHUD" id="Player4">Player4</div>
+        <div class="Score4 TextHUD" id="Score4">25.0</div>
+        <div class="DoraTitle TextHUD">Dora</div>
+        <div class="Dora1" id="Dora1"><img src="janpai/1s.svg"></div>
+        <div class="Dora2" id="Dora2"><img src="janpai/2s.svg"></div>
+        <div class="Dora3" id="Dora3"><img src="janpai/3s.svg"></div>
+        <div class="Dora4" id="Dora4"><img src="janpai/4s.svg"></div>
+        </div>
+
+        <div class="Settings">
+        <form name="updateDisp" action="">
+        <table border=1>
+        <tr><td>Deal</td><td>Honba</td><td>Dora 1</td><td>Dora 2</td><td>Dora 3</td><td>Dora 4</td></tr>
+        <tr><td><select size="10" name="Deal">
+        <option value="E1" selected>E1</option>
+        <option value="E2">E2</option>
+        <option value="E3">E3</option>
+        <option value="E4">E4</option>
+        <option value="S1">S1</option>
+        <option value="S2">S2</option>
+        <option value="S3">S3</option>
+        <option value="S4">S4</option>
+        </select></td>
+        <td><select size="10" name="Honba">
+        <option value="" selected>0</option>
+        <option value=" - 1">1</option>
+        <option value=" - 2">2</option>
+        <option value=" - 3">3</option>
+        <option value=" - 4">4</option>
+        <option value=" - 5">5</option>
+        <option value=" - 6">6</option>
+        <option value=" - 7">7</option>
+        <option value=" - 8">8</option>
+        <option value=" - 9">9</option>
+        <option value=" - 10">10</option>
+        </select></td>
+        <td><select size="10" name="Dora1">
+        <option value="" selected>None</option>
+
+        <option value="<img src=&quot;janpai/1s.svg&quot;>">1s</option>
+        <option value="<img src=&quot;janpai/2s.svg&quot;>">2s</option>
+        <option value="<img src=&quot;janpai/3s.svg&quot;>">3s</option>
+        <option value="<img src=&quot;janpai/4s.svg&quot;>">4s</option>
+        <option value="<img src=&quot;janpai/5s.svg&quot;>">5s</option>
+        <option value="<img src=&quot;janpai/6s.svg&quot;>">6s</option>
+        <option value="<img src=&quot;janpai/7s.svg&quot;>">7s</option>
+        <option value="<img src=&quot;janpai/8s.svg&quot;>">8s</option>
+        <option value="<img src=&quot;janpai/9s.svg&quot;>">9s</option>
+
+        <option value="<img src=&quot;janpai/1m.svg&quot;>">1m</option>
+        <option value="<img src=&quot;janpai/2m.svg&quot;>">2m</option>
+        <option value="<img src=&quot;janpai/3m.svg&quot;>">3m</option>
+        <option value="<img src=&quot;janpai/4m.svg&quot;>">4m</option>
+        <option value="<img src=&quot;janpai/5m.svg&quot;>">5m</option>
+        <option value="<img src=&quot;janpai/6m.svg&quot;>">6m</option>
+        <option value="<img src=&quot;janpai/7m.svg&quot;>">7m</option>
+        <option value="<img src=&quot;janpai/8m.svg&quot;>">8m</option>
+        <option value="<img src=&quot;janpai/9m.svg&quot;>">9m</option>
+
+        <option value="<img src=&quot;janpai/1p.svg&quot;>">1p</option>
+        <option value="<img src=&quot;janpai/2p.svg&quot;>">2p</option>
+        <option value="<img src=&quot;janpai/3p.svg&quot;>">3p</option>
+        <option value="<img src=&quot;janpai/4p.svg&quot;>">4p</option>
+        <option value="<img src=&quot;janpai/5p.svg&quot;>">5p</option>
+        <option value="<img src=&quot;janpai/6p.svg&quot;>">6p</option>
+        <option value="<img src=&quot;janpai/7p.svg&quot;>">7p</option>
+        <option value="<img src=&quot;janpai/8p.svg&quot;>">8p</option>
+        <option value="<img src=&quot;janpai/9p.svg&quot;>">9p</option>
+
+        <option value="<img src=&quot;janpai/1z.svg&quot;>">Est</option>
+        <option value="<img src=&quot;janpai/2z.svg&quot;>">Sud</option>
+        <option value="<img src=&quot;janpai/3z.svg&quot;>">Ouest</option>
+        <option value="<img src=&quot;janpai/4z.svg&quot;>">Nord</option>
+        <option value="<img src=&quot;janpai/5z.svg&quot;>">Haku</option>
+        <option value="<img src=&quot;janpai/6z.svg&quot;>">Hatsu</option>
+        <option value="<img src=&quot;janpai/7z.svg&quot;>">Chun</option>
+
+        </select></td>
+        <td><select size="10" name="Dora2">
+        <option value="" selected>None</option>
+
+        <option value="<img src=&quot;janpai/1s.svg&quot;>">1s</option>
+        <option value="<img src=&quot;janpai/2s.svg&quot;>">2s</option>
+        <option value="<img src=&quot;janpai/3s.svg&quot;>">3s</option>
+        <option value="<img src=&quot;janpai/4s.svg&quot;>">4s</option>
+        <option value="<img src=&quot;janpai/5s.svg&quot;>">5s</option>
+        <option value="<img src=&quot;janpai/6s.svg&quot;>">6s</option>
+        <option value="<img src=&quot;janpai/7s.svg&quot;>">7s</option>
+        <option value="<img src=&quot;janpai/8s.svg&quot;>">8s</option>
+        <option value="<img src=&quot;janpai/9s.svg&quot;>">9s</option>
+
+        <option value="<img src=&quot;janpai/1m.svg&quot;>">1m</option>
+        <option value="<img src=&quot;janpai/2m.svg&quot;>">2m</option>
+        <option value="<img src=&quot;janpai/3m.svg&quot;>">3m</option>
+        <option value="<img src=&quot;janpai/4m.svg&quot;>">4m</option>
+        <option value="<img src=&quot;janpai/5m.svg&quot;>">5m</option>
+        <option value="<img src=&quot;janpai/6m.svg&quot;>">6m</option>
+        <option value="<img src=&quot;janpai/7m.svg&quot;>">7m</option>
+        <option value="<img src=&quot;janpai/8m.svg&quot;>">8m</option>
+        <option value="<img src=&quot;janpai/9m.svg&quot;>">9m</option>
+
+        <option value="<img src=&quot;janpai/1p.svg&quot;>">1p</option>
+        <option value="<img src=&quot;janpai/2p.svg&quot;>">2p</option>
+        <option value="<img src=&quot;janpai/3p.svg&quot;>">3p</option>
+        <option value="<img src=&quot;janpai/4p.svg&quot;>">4p</option>
+        <option value="<img src=&quot;janpai/5p.svg&quot;>">5p</option>
+        <option value="<img src=&quot;janpai/6p.svg&quot;>">6p</option>
+        <option value="<img src=&quot;janpai/7p.svg&quot;>">7p</option>
+        <option value="<img src=&quot;janpai/8p.svg&quot;>">8p</option>
+        <option value="<img src=&quot;janpai/9p.svg&quot;>">9p</option>
+
+        <option value="<img src=&quot;janpai/1z.svg&quot;>">Est</option>
+        <option value="<img src=&quot;janpai/2z.svg&quot;>">Sud</option>
+        <option value="<img src=&quot;janpai/3z.svg&quot;>">Ouest</option>
+        <option value="<img src=&quot;janpai/4z.svg&quot;>">Nord</option>
+        <option value="<img src=&quot;janpai/5z.svg&quot;>">Haku</option>
+        <option value="<img src=&quot;janpai/6z.svg&quot;>">Hatsu</option>
+        <option value="<img src=&quot;janpai/7z.svg&quot;>">Chun</option>
+
+        </select></td>
+        <td><select size="10" name="Dora3">
+        <option value="" selected>None</option>
+
+        <option value="<img src=&quot;janpai/1s.svg&quot;>">1s</option>
+        <option value="<img src=&quot;janpai/2s.svg&quot;>">2s</option>
+        <option value="<img src=&quot;janpai/3s.svg&quot;>">3s</option>
+        <option value="<img src=&quot;janpai/4s.svg&quot;>">4s</option>
+        <option value="<img src=&quot;janpai/5s.svg&quot;>">5s</option>
+        <option value="<img src=&quot;janpai/6s.svg&quot;>">6s</option>
+        <option value="<img src=&quot;janpai/7s.svg&quot;>">7s</option>
+        <option value="<img src=&quot;janpai/8s.svg&quot;>">8s</option>
+        <option value="<img src=&quot;janpai/9s.svg&quot;>">9s</option>
+
+        <option value="<img src=&quot;janpai/1m.svg&quot;>">1m</option>
+        <option value="<img src=&quot;janpai/2m.svg&quot;>">2m</option>
+        <option value="<img src=&quot;janpai/3m.svg&quot;>">3m</option>
+        <option value="<img src=&quot;janpai/4m.svg&quot;>">4m</option>
+        <option value="<img src=&quot;janpai/5m.svg&quot;>">5m</option>
+        <option value="<img src=&quot;janpai/6m.svg&quot;>">6m</option>
+        <option value="<img src=&quot;janpai/7m.svg&quot;>">7m</option>
+        <option value="<img src=&quot;janpai/8m.svg&quot;>">8m</option>
+        <option value="<img src=&quot;janpai/9m.svg&quot;>">9m</option>
+
+        <option value="<img src=&quot;janpai/1p.svg&quot;>">1p</option>
+        <option value="<img src=&quot;janpai/2p.svg&quot;>">2p</option>
+        <option value="<img src=&quot;janpai/3p.svg&quot;>">3p</option>
+        <option value="<img src=&quot;janpai/4p.svg&quot;>">4p</option>
+        <option value="<img src=&quot;janpai/5p.svg&quot;>">5p</option>
+        <option value="<img src=&quot;janpai/6p.svg&quot;>">6p</option>
+        <option value="<img src=&quot;janpai/7p.svg&quot;>">7p</option>
+        <option value="<img src=&quot;janpai/8p.svg&quot;>">8p</option>
+        <option value="<img src=&quot;janpai/9p.svg&quot;>">9p</option>
+
+        <option value="<img src=&quot;janpai/1z.svg&quot;>">Est</option>
+        <option value="<img src=&quot;janpai/2z.svg&quot;>">Sud</option>
+        <option value="<img src=&quot;janpai/3z.svg&quot;>">Ouest</option>
+        <option value="<img src=&quot;janpai/4z.svg&quot;>">Nord</option>
+        <option value="<img src=&quot;janpai/5z.svg&quot;>">Haku</option>
+        <option value="<img src=&quot;janpai/6z.svg&quot;>">Hatsu</option>
+        <option value="<img src=&quot;janpai/7z.svg&quot;>">Chun</option>
+
+        </select></td>
+        <td><select size="10" name="Dora4">
+        <option value="" selected>None</option>
+
+        <option value="<img src=&quot;janpai/1s.svg&quot;>">1s</option>
+        <option value="<img src=&quot;janpai/2s.svg&quot;>">2s</option>
+        <option value="<img src=&quot;janpai/3s.svg&quot;>">3s</option>
+        <option value="<img src=&quot;janpai/4s.svg&quot;>">4s</option>
+        <option value="<img src=&quot;janpai/5s.svg&quot;>">5s</option>
+        <option value="<img src=&quot;janpai/6s.svg&quot;>">6s</option>
+        <option value="<img src=&quot;janpai/7s.svg&quot;>">7s</option>
+        <option value="<img src=&quot;janpai/8s.svg&quot;>">8s</option>
+        <option value="<img src=&quot;janpai/9s.svg&quot;>">9s</option>
+
+        <option value="<img src=&quot;janpai/1m.svg&quot;>">1m</option>
+        <option value="<img src=&quot;janpai/2m.svg&quot;>">2m</option>
+        <option value="<img src=&quot;janpai/3m.svg&quot;>">3m</option>
+        <option value="<img src=&quot;janpai/4m.svg&quot;>">4m</option>
+        <option value="<img src=&quot;janpai/5m.svg&quot;>">5m</option>
+        <option value="<img src=&quot;janpai/6m.svg&quot;>">6m</option>
+        <option value="<img src=&quot;janpai/7m.svg&quot;>">7m</option>
+        <option value="<img src=&quot;janpai/8m.svg&quot;>">8m</option>
+        <option value="<img src=&quot;janpai/9m.svg&quot;>">9m</option>
+
+        <option value="<img src=&quot;janpai/1p.svg&quot;>">1p</option>
+        <option value="<img src=&quot;janpai/2p.svg&quot;>">2p</option>
+        <option value="<img src=&quot;janpai/3p.svg&quot;>">3p</option>
+        <option value="<img src=&quot;janpai/4p.svg&quot;>">4p</option>
+        <option value="<img src=&quot;janpai/5p.svg&quot;>">5p</option>
+        <option value="<img src=&quot;janpai/6p.svg&quot;>">6p</option>
+        <option value="<img src=&quot;janpai/7p.svg&quot;>">7p</option>
+        <option value="<img src=&quot;janpai/8p.svg&quot;>">8p</option>
+        <option value="<img src=&quot;janpai/9p.svg&quot;>">9p</option>
+
+        <option value="<img src=&quot;janpai/1z.svg&quot;>">Est</option>
+        <option value="<img src=&quot;janpai/2z.svg&quot;>">Sud</option>
+        <option value="<img src=&quot;janpai/3z.svg&quot;>">Ouest</option>
+        <option value="<img src=&quot;janpai/4z.svg&quot;>">Nord</option>
+        <option value="<img src=&quot;janpai/5z.svg&quot;>">Haku</option>
+        <option value="<img src=&quot;janpai/6z.svg&quot;>">Hatsu</option>
+        <option value="<img src=&quot;janpai/7z.svg&quot;>">Chun</option>
+
+        </select></td></tr>
+        </table>
+
+        <table border=1>
+        <tr><th>#</th><th>親</th><th>Name</th><th>Score</th><th>Video source</th><th>Rotation</th></tr>
+        <tr><td>1</td><td><input type="radio" name="oya" value="1" checked></td><td><input type="text" name="Player1" value="Player 1"></td><td><textarea rows="2" name="Score1">25.0
+(±0)</textarea></td><td><select id="videoSourcePlayer1"><option value="none">None</option></select></td><td><x-knob id="Rotate1"></x-knob></td></tr>
+        <tr><td>2</td><td><input type="radio" name="oya" value="2"></td><td><input type="text" name="Player2" value="Player 2"></td><td><textarea rows="2" name="Score2">25.0
+(±0)</textarea></td><td><select id="videoSourcePlayer2"><option value="none">None</option></select></td><td><x-knob id="Rotate2"></x-knob></td></tr>
+        <tr><td>3</td><td><input type="radio" name="oya" value="3"></td><td><input type="text" name="Player3" value="Player 3"></td><td><textarea rows="2" name="Score3">25.0
+(±0)</textarea></td><td><select id="videoSourcePlayer3"><option value="none">None</option></select></td><td><x-knob id="Rotate3"></x-knob></td></tr>
+        <tr><td>4</td><td><input type="radio" name="oya" value="4"></td><td><input type="text" name="Player4" value="Player 4"></td><td><textarea rows="2" name="Score4">25.0
+(±0)</textarea></td><td><select id="videoSourcePlayer4"><option value="none">None</option></select></td><td><x-knob id="Rotate4"></x-knob></td></tr>
+        </table>
+        <input type="button" value="Update Display" onClick="updateDisplay();"><input type="button" value="Show HUD on Final" onclick="SwitchHUDFinal(true)"><input type="button" value="Hide HUD on Final" onclick="SwitchHUDFinal(false)"><input type="button" value="Update Sources" onClick="updateSourcesListHud();">
+        </form>
+        </div>
+    </body>
+</html>

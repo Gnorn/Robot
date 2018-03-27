@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://simplewebrtc.com/latest-v2.js"></script>
+        <style>
+            #remoteVideos video {
+                height: 720px;
+            }
+            #localVideo {
+                height: 50px;
+            }
+            .Final {
+              position:relative;
+              top:50px;
+              height:360px;
+              width:640px;
+            }
+            .HUD {
+                z-index: 11;
+                position:absolute;
+                text-align:center;
+                width:20%;
+                margin-left: 40%;
+                top:20px;
+                background-color: white;
+                opacity:0.75;
+                font-size:20px;
+                font-weight: bold;
+            }
+            .Janpai {
+                position:absolute;
+                top:550px;
+            }
+            .Chatbox {
+                position: absolute;
+                top:30px;
+                left:20px;
+                height: 480px;
+                width: 860px;
+            }
+            .remotes {
+                position: absolute;
+                top:60px;
+                height: 480px;
+                width: 860px;
+            }
+            .videoContainer {
+                position: relative;
+                height: 180px;
+                width: 320px;
+                float:left;
+            }
+            .videoContainer video {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+            }
+            .janpaiSelected {
+                background-color: green;
+            }
+            .janpaiUnselected {
+                opacity:0.5;
+            }
+            img{
+                height:50%;
+                width:50%;
+            }
+            .janpaiUnselected:hover {
+                opacity:1.0;
+            }
+
+        </style>
+        <script>
+
+          var webrtc;
+          var OnCall = false;
+
+
+          function StopLive(){
+            if(OnCall){
+              webrtc.stopLocalVideo();
+              webrtc.leaveRoom();
+              OnCall=false;
+            } else {
+              alert("Not on call yet");
+            }
+          }
+
+          function StartLive(){
+            if(!OnCall) {
+              var mediaOptions = {
+                audio: false,
+                video: false
+              };
+
+
+              webrtc = new SimpleWebRTC({
+                // the id/element dom element that will hold "our" video
+                localVideoEl: 'localVideo',
+                // the id/element dom element that will hold remote videos
+                remoteVideosEl: '',
+                // immediately ask for camera access
+                autoRequestMedia: true,
+                url: 'https://macbook-pro-de-simon.local:8889',
+                media: mediaOptions
+              });
+            //  webrtc.on('readyToCall', function () {
+            webrtc.connection.on('message', function(data){
+                            if(data.type === 'videosource'){
+                              SwitchVideo(data.payload.data[0],data.payload.data[2]);
+                            }
+                          });
+                // you can name it anything
+              webrtc.joinRoom('mahjong bot');
+              // a peer video has been added
+              webrtc.on('videoAdded', function (video, peer) {
+                  var remotes = document.getElementById('remotes');
+                  if (remotes) {
+                      var container = document.createElement('div');
+                      container.className = 'videoContainer';
+                      container.id = 'container_' + webrtc.getDomId(peer);
+                      container.appendChild(video);
+                      var HUD = document.createElement('div');
+                      HUD.className = 'HUD';
+                      HUD.innerHTML = peer.nick;
+                      container.appendChild(HUD);
+                      // suppress contextmenu
+                      video.oncontextmenu = function () { return false; };
+
+                      remotes.appendChild(container);
+                  }
+              });
+
+              // a peer video was removed
+              webrtc.on('videoRemoved', function (video, peer) {
+                  console.log('video removed ', peer);
+                  var remotes = document.getElementById('remotes');
+                  var el = document.getElementById(peer ? 'container_' + webrtc.getDomId(peer) : 'localScreenContainer');
+                  if (remotes && el) {
+                      remotes.removeChild(el);
+                  }
+              });
+            //  });
+              OnCall=true;
+            } else {
+              alert("Already on call");
+            }
+          }
+
+
+
+          var audioDevices = [],
+              videoDevices = [];
+
+        function updateDisplaySources(){
+          var select = document.getElementById("videoSource");
+          for (var i = select.options.length -1; i >= 0 ; i--){
+            select.remove(i);
+          }
+          for (var i = 0; i!==videoDevices.length;++i){
+            var videoDevice = videoDevices[i];
+            var option = document.createElement("option");
+            option.text = videoDevice.label;
+            option.value = videoDevice.deviceId;
+            select.add(option);
+          }
+        }
+        function getInfo(){
+              videoDevices = [];
+              navigator.mediaDevices.enumerateDevices().then(function (devices) {
+                for (var i = 0; i !== devices.length; ++i) {
+                    var device = devices[i];
+                    if (device.kind === 'audioinput') {
+                        device.label = device.label || 'microphone ' + (audioDevices.length + 1);
+                        audioDevices.push(device);
+                    } else if (device.kind === 'videoinput') {
+                        device.label = device.label || 'camera ' + (videoDevices.length + 1);
+                        videoDevices.push(device);
+                    }
+                }
+              updateDisplaySources();
+              });
+
+        }
+        var FinalWindow
+        function OpenFinal(){
+          FinalWindow = window.open('videolocal-final.html');
+        }
+
+        function SetFinalVideo(videoid){
+            var final = document.getElementById('Final');
+
+                  var container = document.createElement('div');
+                  container.className = 'videoContainer';
+                  container.id = 'final_' + videoid;
+                  var video = document.getElementById(videoid+'_video_incoming');
+                  var newvideo = video.cloneNode(true);
+                  container.appendChild(newvideo);
+                  //container.appendChild(HUD);
+                  // suppress contextmenu
+                  videoid.oncontextmenu = function () { return false; };
+
+                  final.appendChild(container);
+
+        }
+
+        function SwitchVideo(video, peer) {
+          var remotes = document.getElementById('remotes');
+          if (remotes) {
+              var container = document.createElement('div');
+              container.className = 'videoContainer';
+              container.id = 'container_' + webrtc.getDomId(peer);
+              container.appendChild(video);
+              var HUD = document.createElement('div');
+              HUD.className = 'HUD';
+              HUD.innerHTML = peer.nick;
+              container.appendChild(HUD);
+              // suppress contextmenu
+              video.oncontextmenu = function () { return false; };
+
+              remotes.appendChild(container);
+          }
+        }
+
+        </script>
+    </head>
+    <body>
+      <div class="select">
+        <a href="javascript:void(0);" onclick="StopLive();">Stop Live</a> - <a href="javascript:void(0);" onclick="StartLive();">Start Live</a>
+      </div>
+        <div class="remotes" id="remotes"></div>
+
+    </body>
+</html>

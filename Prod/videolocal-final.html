@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://simplewebrtc.com/latest-v2.js"></script>
+        <link href="Style.css" rel="stylesheet" type="text/css" />
+        <style>
+            #remoteVideos video {
+                height: 720px;
+            }
+            #localVideo {
+                height: 50px;
+            }
+
+            .HUD {
+                z-index: 11;
+                position:absolute;
+                text-align:center;
+                width:20%;
+                margin-left: 40%;
+                top:20px;
+                background-color: white;
+                opacity:0.75;
+                font-size:20px;
+                font-weight: bold;
+            }
+            .Janpai {
+                position:absolute;
+                top:550px;
+            }
+            .Chatbox {
+                position: absolute;
+                top:30px;
+                left:20px;
+                height: 480px;
+                width: 860px;
+            }
+            .remotes {
+                position: absolute;
+                top:60px;
+                height: 480px;
+                width: 860px;
+            }
+            .remotesFinal {
+                position: absolute;
+                top:60px;
+                height: 720px;
+                width: 1280px;
+            }
+            .videoContainer {
+                position: absolute;
+                height: 100%;
+                width: 100%;
+                visibility: hidden;
+            }
+            .videoContainerVisible {
+                position: absolute;
+                height: 100%;
+                width: 100%;
+                visibility: visible;
+                z-index:-1;
+            }
+            .videoContainer video {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+            }
+            .videoContainerVisible video {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+            }
+            .janpaiSelected {
+                background-color: green;
+            }
+            .janpaiUnselected {
+                opacity:0.5;
+            }
+            img{
+                height:100%;
+                width:100%;
+            }
+            .janpaiUnselected:hover {
+                opacity:1.0;
+            }
+
+        </style>
+        <script>
+
+          var SelectedVideoDevice = "default";
+          var webrtc;
+          var OnCall = false;
+
+          var janpaiz;
+          var Peerz = [];
+          var CurrentVideo;
+
+          function StopLive(){
+            if(OnCall){
+              webrtc.stopLocalVideo();
+              webrtc.leaveRoom();
+              OnCall=false;
+            } else {
+              alert("Not on call yet");
+            }
+          }
+
+          function StartLive(){
+            if(!OnCall) {
+              var mediaOptions = {
+                audio: false,
+                video: false
+              };
+              if (SelectedVideoDevice != "default"){
+                mediaOptions = {
+                    video: {deviceId: SelectedVideoDevice ? {exact: SelectedVideoDevice} : undefined}
+                  };
+              }
+
+              webrtc = new SimpleWebRTC({
+                // the id/element dom element that will hold "our" video
+                localVideoEl: 'localVideo',
+                // the id/element dom element that will hold remote videos
+                remoteVideosEl: '',
+                // immediately ask for camera access
+                autoRequestMedia: true,
+                url: 'https://macbook-pro-de-simon.local:8889',
+                media: mediaOptions
+              });
+            //  webrtc.on('readyToCall', function () {
+                // you can name it anything
+
+                webrtc.connection.on('message', function(data){
+                                if(data.type === 'videosource'){
+                                  SwitchVideo(data.payload.data);
+                                }
+                                if(data.type === 'HUDFinalContent'){
+                                  document.getElementById("HUDFinal").innerHTML = data.payload.data;
+                                }
+                                if(data.type === 'HUDFinalDisplay'){
+                                  console.log("HUD stuff");
+                                  if(data.payload.data == true) {
+                                    document.getElementById("HUDFinal").className = "HUDFinalWrapperDisplay";
+                                    document.getElementById("Player1HUD").style.opacity = "1";
+                                  } else {
+                                    document.getElementById("HUDFinal").className = "HUDFinalWrapper";
+                                    document.getElementById("Player1HUD").style.opacity = "0";
+                                    console.log("HUD off");
+                                  }
+                                }
+                                if(data.type === 'PlayersHUD'){
+                                  updatePlayerHUDFinal(data.payload);
+                                }
+                              });
+              webrtc.joinRoom('mahjong bot');
+
+
+              // a peer video has been added
+              webrtc.on('videoAdded', function (video, peer) {
+                  Peerz.push(peer.id, peer.nick, video);
+                  var remotes = document.getElementById('remotes');
+                  if (remotes) {
+                      var container = document.createElement('div');
+                      container.className = 'videoContainer';
+                      container.id = 'container_' + webrtc.getDomId(peer);
+                      container.appendChild(video);
+
+                      // suppress contextmenu
+                      video.oncontextmenu = function () { return false; };
+
+                      remotes.appendChild(container);
+                  }
+              });
+
+              // a peer video was removed
+              webrtc.on('videoRemoved', function (video, peer) {
+                  console.log('video removed ', peer);
+                  var remotes = document.getElementById('remotes');
+                  var el = document.getElementById(peer ? 'container_' + webrtc.getDomId(peer) : 'localScreenContainer');
+                  if (remotes && el) {
+                      remotes.removeChild(el);
+                  }
+              });
+            //  });
+              OnCall=true;
+            } else {
+              alert("Already on call");
+            }
+          }
+
+
+
+          var audioDevices = [],
+              videoDevices = [];
+
+        function updateDisplaySources(){
+          var select = document.getElementById("videoSource");
+          for (var i = select.options.length -1; i >= 0 ; i--){
+            select.remove(i);
+          }
+          for (var i = 0; i!==videoDevices.length;++i){
+            var videoDevice = videoDevices[i];
+            var option = document.createElement("option");
+            option.text = videoDevice.label;
+            option.value = videoDevice.deviceId;
+            select.add(option);
+          }
+        }
+        function getInfo(){
+              videoDevices = [];
+              navigator.mediaDevices.enumerateDevices().then(function (devices) {
+                for (var i = 0; i !== devices.length; ++i) {
+                    var device = devices[i];
+                    if (device.kind === 'audioinput') {
+                        device.label = device.label || 'microphone ' + (audioDevices.length + 1);
+                        audioDevices.push(device);
+                    } else if (device.kind === 'videoinput') {
+                        device.label = device.label || 'camera ' + (videoDevices.length + 1);
+                        videoDevices.push(device);
+                    }
+                }
+              updateDisplaySources();
+              });
+
+        }
+        var FinalWindow
+        function OpenFinal(){
+          FinalWindow = window.open('videolocal-final.html');
+        }
+
+        function SetFinalVideo(videoid){
+          webrtc.sendToAll('videosource', {data: videoid});
+        }
+
+        function SwitchVideo(containerid){
+          console.log(containerid);
+          document.getElementById(containerid).className = "videoContainerVisible";
+          if(CurrentVideo && CurrentVideo != containerid){
+            document.getElementById(CurrentVideo).className = "videoContainer";
+          }
+          CurrentVideo=containerid;
+        }
+
+        function updatePlayerHUDFinal(PlayersHUD) {
+          var Player1label = PlayersHUD.Player1label;
+          var Player1source = PlayersHUD.Player1source;
+          var Rotate1 = PlayersHUD.Rotate1;
+
+          var Player2label = PlayersHUD.Player2label;
+          var Player2source = PlayersHUD.Player2source;
+          var Rotate2 = PlayersHUD.Rotate2;
+
+          var Player3label = PlayersHUD.Player3label;
+          var Player3source = PlayersHUD.Player3source;
+          var Rotate3 = PlayersHUD.Rotate3;
+
+          var Player4label = PlayersHUD.Player4label;
+          var Player4source = PlayersHUD.Player4source;
+          var Rotate4 = PlayersHUD.Rotate4;
+
+          var old = document.getElementById("Player1HUD");
+          if(old){
+            old.outerHTML='';
+          }
+          var old = document.getElementById("Player2HUD");
+          if(old){
+            old.outerHTML='';
+          }
+          var old = document.getElementById("Player3HUD");
+          if(old){
+            old.outerHTML='';
+          }
+          var old = document.getElementById("Player4HUD");
+          if(old){
+            old.outerHTML='';
+          }
+
+
+          if (Player1source != "none"){
+
+            container = document.getElementById(Player1source);
+            var HUD = document.createElement('div');
+            HUD.className = 'Player1HUD';
+            HUD.id = 'Player1HUD';
+            HUD.innerHTML = Player1label;
+            HUD.style.transform = "rotate("+Rotate1+"deg)";
+            container.appendChild(HUD);
+          }
+
+          if (Player2source != "none"){
+
+            container = document.getElementById(Player2source);
+            var HUD = document.createElement('div');
+            HUD.className = 'Player2HUD';
+            HUD.id = 'Player2HUD';
+            HUD.innerHTML = Player2label;
+            container.appendChild(HUD);
+          }
+
+          if (Player3source != "none"){
+
+            container = document.getElementById(Player3source);
+            var HUD = document.createElement('div');
+            HUD.className = 'Player3HUD';
+            HUD.id = 'Player3HUD';
+            HUD.innerHTML = Player3label;
+            container.appendChild(HUD);
+          }
+
+          if (Player4source != "none"){
+
+            container = document.getElementById(Player4source);
+            var HUD = document.createElement('div');
+            HUD.className = 'Player4HUD';
+            HUD.id = 'Player4HUD';
+            HUD.innerHTML = Player4label;
+            container.appendChild(HUD);
+          }
+
+        }
+
+
+        </script>
+    </head>
+    <body>
+      <div class="select">
+        <a href="javascript:void(0);" onclick="StopLive();">Stop Live</a> - <a href="javascript:void(0);" onclick="StartLive();">Start Live</a>
+      </div>
+        <div class="remotesFinal" id="remotes">
+
+        <div id="HUDFinal" class="HUDFinalWrapperDisplay">
+        <div class="Deal TextHUD" id="Deal">E1</div>
+        <div class="Honba TextHUD" id="Honba">0</div>
+        <div class="Player1 TextHUD" id="Player1">Player1</div>
+        <div class="Score1 TextHUD" id="Score1">25.0</div>
+        <div class="Player2 TextHUD" id="Player2">Player2</div>
+        <div class="Score2 TextHUD" id="Score2">25.0</div>
+        <div class="Player3 TextHUD" id="Player3">Player3</div>
+        <div class="Score3 TextHUD" id="Score3">25.0</div>
+        <div class="Player4 TextHUD" id="Player4">Player4</div>
+        <div class="Score4 TextHUD" id="Score4">25.0</div>
+        <div class="DoraTitle TextHUD">Dora</div>
+        <div class="Dora1" id="Dora1"><img src="janpai/1s.svg"></div>
+        <div class="Dora2" id="Dora2"><img src="janpai/2s.svg"></div>
+        <div class="Dora3" id="Dora3"><img src="janpai/3s.svg"></div>
+        <div class="Dora4" id="Dora4"><img src="janpai/4s.svg"></div>
+        </div>
+      </div>
+    </body>
+</html>

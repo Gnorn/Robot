@@ -1,0 +1,27 @@
+{
+  "isDev": false,
+  "server": {
+    "port": 8889,
+    "/* secure */": "/* whether this connects via https */",
+    "secure": true,
+    "key": "/opt/local/etc/letsencrypt/live/simon.chuuren.fr/privkey.pem",
+    "cert": "/opt/local/etc/letsencrypt/live/simon.chuuren.fr/fullchain.pem",
+    "password": null
+  },
+  "rooms": {
+    "/* maxClients */": "/* maximum number of clients per room. 0 = no limit */",
+    "maxClients": 0
+  },
+  "stunservers": [
+    {
+      "urls": "stun:stun.l.google.com:19302"
+    }
+  ],
+  "turnservers": [
+    {
+      "urls": ["turn:your.turn.servers.here"],
+      "secret": "turnserversharedsecret",
+      "expiry": 86400
+    }
+  ]
+}

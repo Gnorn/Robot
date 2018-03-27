@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://simplewebrtc.com/latest-v2.js"></script>
+        <style>
+            .janpaiUnselected {
+              visibility: hidden;
+            }
+            .janpaiSelected
+            {
+              visibility: visible;
+            }
+            .Chatbox {
+              position: absolute;
+              top:100px;
+              left:20px;
+              background-color:white;
+              opacity:0.8;
+            }
+            .Janpai {
+              position: absolute;
+              top:150px;
+              left:20px;
+              width:100%;
+              height:100%;
+            }
+            #remoteVideos video {
+                height: 720px;
+            }
+            #localVideo {
+                width: 100%;
+                height: auto;
+                max-height:100%;
+            }
+
+        </style>
+        <script>
+
+        var SelectedVideoDevice = "default";
+        var webrtc;
+        var OnCall = false;
+        var janpaiz;
+
+        function InitJanpai(){
+          janpaiz = {
+            '1p':false,
+            '2p':false,
+            '3p':false,
+            '4p':false,
+            '5p':false,
+            '6p':false,
+            '7p':false,
+            '8p':false,
+            '9p':false,
+            '1s':false,
+            '2s':false,
+            '3s':false,
+            '4s':false,
+            '5s':false,
+            '6s':false,
+            '7s':false,
+            '8s':false,
+            '9s':false,
+            '1m':false,
+            '2m':false,
+            '3m':false,
+            '4m':false,
+            '5m':false,
+            '6m':false,
+            '7m':false,
+            '8m':false,
+            '9m':false,
+            '1z':false,
+            '2z':false,
+            '3z':false,
+            '4z':false,
+            '5z':false,
+            '6z':false,
+            '7z':false
+          }
+        }
+
+        InitJanpai();
+
+        function UpdateJanpai(){
+          var result="";
+          for (var janpai in janpaiz) {
+            //console.log("janpai "+janpaiz[janpai]+" : "+janpai)
+            if (janpaiz[janpai]){
+              result = result + '<img src="janpai/'+janpai+'.svg" />';
+            }
+          }
+          document.getElementById('janpai').innerHTML = result;
+        }
+
+        function JanpaiSwitch(janpai,status){
+          if (status == false) {
+            janpaiz[janpai] = false;
+            document.getElementById(janpai).className="janpaiUnselected";
+          } else {
+            janpaiz[janpai] = true;
+            document.getElementById(janpai).className="janpaiSelected";
+          }
+        }
+
+        function StopLive(){
+          if(OnCall){
+            webrtc.stopLocalVideo();
+            webrtc.leaveRoom();
+            OnCall=false;
+          } else {
+            alert("Not on call yet");
+          }
+        }
+
+          function StartLive(){
+            if(!OnCall) {
+              RefreshSources();
+              var mediaOptions = {
+                audio: false,
+                video: true
+              };
+              if (SelectedVideoDevice != "default"){
+
+                  mediaOptions = {
+                            video: {
+                              deviceId: SelectedVideoDevice ? {exact: SelectedVideoDevice} : undefined,
+                              width: {ideal: 1280},
+                              height: {ideal: 720}
+                            }
+                  }
+              }
+
+
+              webrtc = new SimpleWebRTC({
+                // the id/element dom element that will hold "our" video
+                localVideoEl: 'localVideo',
+                // the id/element dom element that will hold remote videos
+                remoteVideosEl: 'remoteVideos',
+                // immediately ask for camera access
+                autoRequestMedia: true,
+                url: 'https://simon.chuuren.fr:8888',
+                media: mediaOptions,
+                localVideo:{mirror:false}
+              });
+            //  webrtc.on('readyToCall', function () {
+                // you can name it anything
+              webrtc.joinRoom('mahjong bot');
+
+              webrtc.connection.on('message', function(data){
+                              if(data.type === 'chat'){
+                                document.getElementById("chatbox").innerHTML = data.payload.data;
+                              }
+                              if(data.type === 'janpai'){
+                                janpaiz=data.payload.data;
+                                UpdateJanpai();
+                              }
+                          });
+            //  });
+              OnCall=true;
+            } else {
+              alert("Already on call");
+            }
+          }
+
+          var audioDevices = [],
+              videoDevices = [];
+
+        function updateDisplaySources(){
+          var select = document.getElementById("videoSource");
+          for (var i = select.options.length -1; i >= 0 ; i--){
+            select.remove(i);
+          }
+          for (var i = 0; i!==videoDevices.length;++i){
+            var videoDevice = videoDevices[i];
+            var option = document.createElement("option");
+            option.text = videoDevice.label;
+            option.value = videoDevice.deviceId;
+            select.add(option);
+          }
+        }
+        function getInfo(){
+              videoDevices = [];
+              navigator.mediaDevices.enumerateDevices().then(function (devices) {
+                for (var i = 0; i !== devices.length; ++i) {
+                    var device = devices[i];
+                    if (device.kind === 'audioinput') {
+                        device.label = device.label || 'microphone ' + (audioDevices.length + 1);
+                        audioDevices.push(device);
+                    } else if (device.kind === 'videoinput') {
+                        device.label = device.label || 'camera ' + (videoDevices.length + 1);
+                        videoDevices.push(device);
+                    }
+                }
+              updateDisplaySources();
+              });
+
+        }
+
+        function RefreshSources(){
+
+          var select = document.getElementById("videoSource");
+          if (select.selectedIndex != -1){
+            SelectedVideoDevice = select.options[select.selectedIndex].value;
+          }
+        }
+
+
+
+        </script>
+    </head>
+    <body>
+        <div class="select">
+              <label for="videoSource">Video source: </label><select id="videoSource"></select><br />
+              <a href="javascript:void(0);" onclick="getInfo();">Refresh list of cameras</a> - <a href="javascript:void(0);" onclick="StopLive();">Stop Live</a> - <a href="javascript:void(0);" onclick="StartLive();">Start Live</a>
+        </div>
+        <video autoplay playsinline muted id="localVideo"></video>
+        <div id="chatbox" class="Chatbox"></div>
+        <div id="janpai" class="Janpai"></div>
+    </body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://simplewebrtc.com/latest-v2.js"></script>
+        <style>
+            #remoteVideos video {
+                height: 720px;
+            }
+            #localVideo {
+                height: 50px;
+            }
+
+        </style>
+        <script>
+
+          var SelectedVideoDevice = "default";
+          var webrtc;
+          var OnCall;
+
+          function StopLive(){
+            webrtc.stopLocalVideo();
+            webrtc.leaveRoom();
+            OnCall=false;
+          }
+
+          function StartLive(){
+            if(!OnCall) {
+              var mediaOptions = {
+                audio: false,
+                video: false
+              };
+              if (SelectedVideoDevice != "default"){
+                mediaOptions = {
+                    video: {deviceId: SelectedVideoDevice ? {exact: SelectedVideoDevice} : undefined}
+                  };
+              }
+
+              webrtc = new SimpleWebRTC({
+                // the id/element dom element that will hold "our" video
+                localVideoEl: 'localVideo',
+                // the id/element dom element that will hold remote videos
+                remoteVideosEl: 'remoteVideos',
+                // immediately ask for camera access
+                autoRequestMedia: true,
+                url: 'https://simon.chuuren.fr:8888',
+                media: mediaOptions
+              });
+            //  webrtc.on('readyToCall', function () {
+                // you can name it anything
+              webrtc.joinRoom('mahjong bot');
+            //  });
+              OnCall=true;
+            } else {
+              alert("Already on call");
+            }
+          }
+
+          var audioDevices = [],
+              videoDevices = [];
+
+        function updateDisplaySources(){
+          var select = document.getElementById("videoSource");
+          for (var i = select.options.length -1; i >= 0 ; i--){
+            select.remove(i);
+          }
+          for (var i = 0; i!==videoDevices.length;++i){
+            var videoDevice = videoDevices[i];
+            var option = document.createElement("option");
+            option.text = videoDevice.label;
+            option.value = videoDevice.deviceId;
+            select.add(option);
+          }
+        }
+        function getInfo(){
+              videoDevices = [];
+              navigator.mediaDevices.enumerateDevices().then(function (devices) {
+                for (var i = 0; i !== devices.length; ++i) {
+                    var device = devices[i];
+                    if (device.kind === 'audioinput') {
+                        device.label = device.label || 'microphone ' + (audioDevices.length + 1);
+                        audioDevices.push(device);
+                    } else if (device.kind === 'videoinput') {
+                        device.label = device.label || 'camera ' + (videoDevices.length + 1);
+                        videoDevices.push(device);
+                    }
+                }
+              updateDisplaySources();
+              });
+
+        }
+
+        </script>
+    </head>
+    <body>
+      <div class="select">
+        <a href="javascript:void(0);" onclick="StopLive();">Stop Live</a> - <a href="javascript:void(0);" onclick="StartLive();">Start Live</a>
+      </div>
+        <div id="remoteVideos"></div>
+
+    </body>
+</html>
